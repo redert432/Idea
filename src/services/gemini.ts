@@ -4,7 +4,7 @@ let aiInstance: GoogleGenAI | null = null;
 
 function getAI(): GoogleGenAI {
   if (!aiInstance) {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || "AIzaSyAPA-Gefvu5XoYnOXjT7-97E8AuKkoNjZc";
     if (!apiKey) {
       throw new Error("لم يتم العثور على مفتاح API الخاص بـ Gemini. يرجى إضافته كمتغير بيئة (GEMINI_API_KEY) في Vercel.");
     }
