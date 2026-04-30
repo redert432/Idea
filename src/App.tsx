@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Lightbulb, RotateCw, Sparkles, Target, Settings2, Play, Pause, Settings, X, History } from 'lucide-react';
+import { Lightbulb, RotateCw, Sparkles, Target, Settings2, Play, Pause, Settings, X, History, AlertTriangle } from 'lucide-react';
 import { generateNewAppIdea, AppIdea, GenerationSettings } from './services/gemini';
 
 const TIMER_DURATION = 60; // seconds
@@ -17,6 +17,7 @@ export default function App() {
   const [timeLeft, setTimeLeft] = useState(60);
   const [isLoading, setIsLoading] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<GenerationSettings>({ category: 'الكل', focus: '' });
 
@@ -24,13 +25,16 @@ export default function App() {
 
   const fetchIdea = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const idea = await generateNewAppIdea(settings);
       setIdeas((prev) => [idea, ...prev]);
       setActiveIndex(0);
       setTimeLeft(timerDuration);
-    } catch (error) {
-      console.error("Failed to fetch idea:", error);
+    } catch (err: any) {
+      console.error("Failed to fetch idea:", err);
+      setError(err.message || "حدث خطأ غير معروف أثناء توليد الفكرة.");
+      setIsPaused(true); // Pause on error
     } finally {
       setIsLoading(false);
     }
@@ -135,7 +139,26 @@ export default function App() {
               </div>
 
               <AnimatePresence mode="wait">
-                {(!currentIdea && isLoading) || (isLoading && activeIndex === 0 && ideas.length > 0) ? (
+                {error ? (
+                  <motion.div
+                    key="error"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex-1 flex flex-col items-center justify-center text-center p-6 border border-red-500/30 bg-red-500/10 rounded-2xl"
+                  >
+                    <AlertTriangle className="w-12 h-12 text-red-400 mb-4" />
+                    <h2 className="text-xl font-bold text-red-300 mb-2">عذراً، حدث خطأ!</h2>
+                    <p className="text-red-200/80 mb-6">{error}</p>
+                    <button
+                      onClick={handleManualRefresh}
+                      className="bg-red-500/20 hover:bg-red-500/30 text-red-200 py-2 px-6 rounded-full transition-colors flex items-center gap-2"
+                    >
+                      <RotateCw className="w-4 h-4" />
+                      المحاولة مرة أخرى
+                    </button>
+                  </motion.div>
+                ) : (!currentIdea && isLoading) || (isLoading && activeIndex === 0 && ideas.length > 0) ? (
                   <motion.div
                     key="loading"
                     initial={{ opacity: 0 }}

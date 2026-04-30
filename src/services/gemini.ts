@@ -1,6 +1,17 @@
 import { GoogleGenAI, Type, Schema } from '@google/genai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let aiInstance: GoogleGenAI | null = null;
+
+function getAI(): GoogleGenAI {
+  if (!aiInstance) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("لم يتم العثور على مفتاح API الخاص بـ Gemini. يرجى إضافته كمتغير بيئة (GEMINI_API_KEY) في Vercel.");
+    }
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+}
 
 export interface AppIdea {
   title: string;
@@ -21,6 +32,8 @@ export async function generateNewAppIdea(settings?: GenerationSettings): Promise
   const prompt = `أنت خبير في ريادة الأعمال التقنية وتطوير المنتجات.
 المهمة: اقترح فكرة تطبيق ذكي (موبايل أو ويب) جديدة، مبتكرة، وغير مكررة ${categoryStr} ${focusStr}. نريد فكرة تحل مشكلة حقيقية أو تقدم تجربة استثنائية. 
 يجب أن يكون الرد باللغة العربية.`;
+  
+  const ai = getAI();
   
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
